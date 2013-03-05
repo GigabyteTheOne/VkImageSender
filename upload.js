@@ -181,7 +181,7 @@ document.addEventListener("DOMContentLoaded", function()
 		}
 		else
 		{
-		  thereIsAnError('Getting image filename', 'filename.length <= 0');
+			thereIsAnError('Getting image filename', 'filename.length <= 0');
 		}
 	}
 	else
