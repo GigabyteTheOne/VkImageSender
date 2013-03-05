@@ -4,6 +4,7 @@ var _photoData;
 var _accToken;
 var _photoObject;
 var _userId;
+var _uids = [];
 
 function getObjectDescription(object)
 {
@@ -13,6 +14,21 @@ function getObjectDescription(object)
 		res += prop + "(" + (typeof prop) + "): " + object[prop] + "\n";
 	}
 	return res;
+}
+
+function hasClass(ele,cls) {
+	return ele.className.match(new RegExp('(\\s|^)'+cls+'(\\s|$)'));
+}
+ 
+function addClass(ele,cls) {
+	if (!this.hasClass(ele,cls)) ele.className += " "+cls;
+}
+ 
+function removeClass(ele,cls) {
+	if (hasClass(ele,cls)) {
+    	var reg = new RegExp('(\\s|^)'+cls+'(\\s|$)');
+		ele.className=ele.className.replace(reg,' ');
+	}
 }
 
 function upload(imageUrl, fileName, accToken)
@@ -87,20 +103,24 @@ function onSavePhoto(event)
 	}
 }
 
-function sendMessage(uid)
+function sendMessage()
 {
-	if (uid && _photoObject)
+	if (_uids && _photoObject)
 	{
 		var messageText = document.getElementById("message_text").value;
-		var sendMessageRequest = new XMLHttpRequest();
-		sendMessageRequest.open("GET", "https://api.vk.com/method/messages.send?" + 
-			"uid=" + uid + 
-			"&message=" + messageText +
-			"&attachment=" + _photoObject.id +
-			"&access_token=" + _accToken);
-// 		sendMessageRequest.onload = onSendMessage;
-// 		sendMessageRequest.send();
-		onSendMessage();
+		for (var index = 0; index < _uids.length; index++)
+		{
+			var uid = _uids[index];
+			var sendMessageRequest = new XMLHttpRequest();
+			sendMessageRequest.open("GET", "https://api.vk.com/method/messages.send?" + 
+				"uid=" + uid + 
+				"&message=" + messageText +
+				"&attachment=" + _photoObject.id +
+				"&access_token=" + _accToken);
+			sendMessageRequest.onload = onSendMessage;
+			sendMessageRequest.send();
+// 			onSendMessage();
+		}
 	}
 }
 
@@ -108,7 +128,8 @@ function sendMessage(uid)
 function onSendMessage(event)
 {
 	//todo: write message in window, set timer with 5 seconds to close and button (like shutdown in ubuntu)
-	window.close();
+// 	alert("Sended");
+// 	window.close();
 }
 
 function beginLoadFriendList()
@@ -117,7 +138,7 @@ function beginLoadFriendList()
 	getFriendsRequest.onload = onGetFriends;
 	getFriendsRequest.open("GET", "https://api.vk.com/method/friends.get?"+
 		"access_token=" + _accToken +
-		"&fields=uid,first_name,last_name,photo" +
+		"&fields=uid,first_name,last_name,photo,online,last_seen" +
 		"&order=hints"
 		);
 	getFriendsRequest.send();
@@ -128,40 +149,84 @@ function onGetFriends(event)
 	var answer = JSON.parse(event.target.response);
 	if (answer.response)
 	{
-		var table = document.createElement("table");
+		var friendDiv = document.getElementById("friends_list");
 		for (var friendNum = 0; friendNum < answer.response.length; friendNum++)
 		{
-			var friendObject = answer.response[friendNum];
+			var friend = answer.response[friendNum];
+			
+			var div = document.createElement("div");
+			div.className = "friend_row";
+			div.setAttribute("uid", friend.uid);
+			div.onclick = selectFriend;
+			
+			var flag = document.createElement("div");
+			flag.className = "flag";
+			div.appendChild(flag);
+			
+			var table = document.createElement("table");
 			var tr = document.createElement("tr");
 			var td = document.createElement("td");
+			td.className = "photo";
+			
 			var img = document.createElement("img");
-			img.src = friendObject.photo;
+			
+			img.src = friend.photo;
+			
 			td.appendChild(img);
 			tr.appendChild(td);
 			
 			td = document.createElement("td");
+			td.className = "info";
+			
 			var name = document.createElement("a");
-			name.innerHTML = friendObject.first_name + " " + friendObject.last_name;
-			name.href = "#";
-			name.onclick = selectFriend;
-			name.setAttribute("uid", friendObject.uid);
+			name.innerHTML = friend.first_name + " " + friend.last_name;
+			name.setAttribute("uid", friend.uid);
+			
+			var onlineDiv = document.createElement("div");
+			onlineDiv.className = "online";
+			if (friend.online == 1)
+			{
+				onlineDiv.innerHTML = "online";
+			}
 			
 			td.appendChild(name);
+			td.appendChild(onlineDiv);
 			tr.appendChild(td);
 			
 			table.appendChild(tr);
+			div.appendChild(table);
+			
+			
+			
+			friendDiv.appendChild(div);
 		}
-		var friendDiv = document.getElementById("friends_list");
-		friendDiv.appendChild(table);
 	}
 }
 
-function selectFriend(sender, event)
+function selectFriend(event)
 {
-	var uid = sender.target.getAttribute("uid");
+	var row = event.currentTarget;
+	var uid = row.getAttribute("uid");
 	if (uid)
 	{
-		sendMessage(uid);
+		var index = _uids.indexOf(uid);
+		if (index === -1)
+		{
+			if (!hasClass(row, "selected"))
+			{
+				addClass(row, "selected");
+			}
+			_uids.push(uid);
+		}
+		else
+		{
+			if (hasClass(row, "selected"))
+			{
+				removeClass(row, "selected");
+			}
+			_uids.splice(index, 1);
+		}
+		
 	}
 }
 
@@ -199,7 +264,10 @@ document.addEventListener("DOMContentLoaded", function()
 	{
 		thereIsAnError('Parsing image url', 'params || params.length != 2');
 	}
+	document.getElementById("send_button").onclick = sendMessage;
 });
+
+
 
 function thereIsAnError(textToShow, errorToShow)
 {

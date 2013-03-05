@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>vk.com DocUploader extension</title>
+		<title>VKImageSender</title>
 		<style media="screen">
 			*
 			{
@@ -10,13 +10,26 @@
 		
 			html, body
 			{
-				font-family: Tahoma, Arial
+				font-family: Tahoma, Arial;
+				font-size: 11px;
+			}
+			
+			a, a:visited
+			{
+				color: #2B587A;
+				text-decoration: none;
+				cursor: pointer;
+			}
+			
+			a:hover
+			{
+				text-decoration: underline;
 			}
 			
 			html, body
 			{
-				height: 98%;
-				width: 98%;
+				height: 100%;
+				width: 100%;
 			}
 		
     		#friends_list
@@ -24,6 +37,8 @@
     			height: 100%;
     			overflow: auto;
     			width: 100%;
+    			border: 2px solid #e4e8ed;
+    			padding: 0px;
     		}
     		
     		#photo_image_wrapper
@@ -33,28 +48,32 @@
     		
     		#message_text
     		{
-    			width: 100%;
+    			width: 95%;
     			height: 150px;
     		}
     		
     		div, img
     		{
 /*     			border: 1px dashed #000000; */
-    			padding: 5px;
     		}
     		
     		#left_div
     		{
     			float: left;
-    			width:46%;
-    			height: 100%;
+    			width:45%;
+    			height: 95%;
+    			padding: 0px;
+    			margin-top: 10px;
+    			margin-left: 5px;
     		}
     		
     		#right_div
     		{
     			float: right;
-    			width: 47%;
-    			height: 100%;
+    			width: 45%;
+    			height: 95%;
+    			margin-right: 10px;
+    			margin-top: 10px;
     		}
     		
     		.centered
@@ -62,17 +81,71 @@
     			text-align: center;
     		}
     		
-    		#friends_list table
-    		{
-    			border: 1px solid #e4e8ed;
-    		}
-    		
-    		#friends_list td
+    		.friend_row
     		{
     			border-bottom: 1px solid #e4e8ed;
+    			background-color: white;
+    			cursor: pointer;
+    		}
+    		
+    		.friend_row:hover
+    		{
+    			background-color: #edf1f5;
+    		}
+    		
+    		.photo
+    		{
+    			padding: 5px;
+    		}
+    		
+    		.info
+    		{
+    			vertical-align: middle;
+    			padding-left: 10px;
+    		}
+    		
+    		.flag
+    		{
+    			width: 25px;
+    			height: 25px;
+    			background: url("flag.png") no-repeat;
+    			float: right;
+    			margin-right: 5px;
+				margin-top: 25px;
+				display: none;
+    		}
+    		
+    		.friend_row:hover .flag
+    		{
+    			display: block;
+    		}
+    		
+    		.selected, 
+    		.selected:hover, 
+    		.selected a
+    		{
+    			background-color: #597DA3;
+    			color: white;
+    		}
+    		
+    		.selected .flag
+    		{
+    			display: block;
+    		}
+    		
+    		#send_button
+    		{
+    			width: 100px;
+    			height: 25px;
+    			background-color: #597DA3;
+    			color: white;
+    			text-align: center;
+    			vertical-align: middle;
+    			cursor: pointer;
     		}
 	    </style>
 		<script type="text/javascript" src="upload.js"></script>
+<!-- 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script> -->
 	</head>
 <body>
 	<!-- <div id="error_message"></div> -->
@@ -90,8 +163,7 @@
 		<div>
 			<textarea id="message_text"></textarea>
 		</div>
+		<div id="send_button">Send message</div>
 	</div>
-	
-	
 </body>
 </html>
