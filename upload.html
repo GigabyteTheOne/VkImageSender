@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>vk.com DocUploader extension</title>
+		<style media="screen">
+			*
+			{
+				margin: 0;
+			}
+		
+			html, body
+			{
+				font-family: Tahoma, Arial
+			}
+			
+			html, body
+			{
+				height: 98%;
+				width: 98%;
+			}
+		
+    		#friends_list
+    		{
+    			height: 100%;
+    			overflow: auto;
+    			width: 100%;
+    		}
+    		
+    		#photo_image_wrapper
+    		{
+    		
+    		}
+    		
+    		#message_text
+    		{
+    			width: 100%;
+    			height: 150px;
+    		}
+    		
+    		div, img
+    		{
+/*     			border: 1px dashed #000000; */
+    			padding: 5px;
+    		}
+    		
+    		#left_div
+    		{
+    			float: left;
+    			width:46%;
+    			height: 100%;
+    		}
+    		
+    		#right_div
+    		{
+    			float: right;
+    			width: 47%;
+    			height: 100%;
+    		}
+    		
+    		.centered
+    		{
+    			text-align: center;
+    		}
+    		
+    		#friends_list table
+    		{
+    			border: 1px solid #e4e8ed;
+    		}
+    		
+    		#friends_list td
+    		{
+    			border-bottom: 1px solid #e4e8ed;
+    		}
+	    </style>
+		<script type="text/javascript" src="upload.js"></script>
+	</head>
+<body>
+	<div id="right_div">
+		<div id="friends_list"></div>
+	</div>
+	
+	<div id="left_div">
+		<div id="loader_image_wrapper" class="centered">
+			<img src="wait.gif" width="168" height="40" class="centered"/>
+		</div>
+		<div id="photo_image_wrapper" class="centered">
+			<img id="photo_image" src="" />
+		</div>
+		<div>
+			<textarea id="message_text"></textarea>
+		</div>
+	</div>
+	
+	
+</body>
+</html>
