@@ -5,6 +5,16 @@ var _accToken;
 var _photoObject;
 var _userId;
 
+function getObjectDescription(object)
+{
+	var res = "";
+	for (var prop in object)
+	{
+		res += prop + "(" + (typeof prop) + "): " + object[prop] + "\n";
+	}
+	return res;
+}
+
 function upload(imageUrl, fileName, accToken)
 {
 	_fileName = fileName
@@ -16,10 +26,9 @@ function upload(imageUrl, fileName, accToken)
 	getPhotoHttpRequest.send();
 }
 
-fucntion onGetPhoto(event)
+function onGetPhoto(event)
 {
-	var answer = JSON.parse(event.target.response);
-	_photoData = event.response;
+	_photoData = event.srcElement.response;
 	var getPhotoUploadServer = new XMLHttpRequest();
 	getPhotoUploadServer.open('GET', 'https://api.vk.com/method/photos.getMessagesUploadServer?access_token=' + _accToken);
 	getPhotoUploadServer.onload = onGetPhotoUploadServer;
@@ -89,14 +98,16 @@ function sendMessage(uid)
 			"&message=" + messageText +
 			"&attachment=" + _photoObject.id +
 			"&access_token=" + _accToken);
-		sendMessageRequest.onload = onSendMessage;
-		sendMessageRequest.send();
+// 		sendMessageRequest.onload = onSendMessage;
+// 		sendMessageRequest.send();
+		onSendMessage();
 	}
 }
 
 
 function onSendMessage(event)
 {
+	//todo: write message in window, set timer with 5 seconds to close and button (like shutdown in ubuntu)
 	window.close();
 }
 

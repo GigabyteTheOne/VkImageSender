@@ -32,7 +32,7 @@ function onGetAccessToken(items)
 function uploadImage()
 {
 	var loadUrl = 'upload.html#' + imageURL + '&' + vkToken;
-
+// 	alert(loadUrl);
 	if (authTabId)
 	{
 		chrome.tabs.update(authTabId, {'url': loadUrl, 'active': true}, function(tab){});
@@ -40,7 +40,6 @@ function uploadImage()
 	}
 	else 
 	{
-// 		chrome.tabs.create({"url": loadUrl, "selected": true});
 		chrome.windows.create({
 			"url": loadUrl, 
 			"type": "panel",

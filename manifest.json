@@ -11,7 +11,7 @@
 //		"48": "imageinfo-48.png"
 //	},
    "manifest_version": 2,
-//	"homepage_url": "http://crea7or.spb.ru",
+//	"homepage_url": "",
    "name": "VK Image Sender",
    "permissions": [ "contextMenus", "tabs", "storage" , "http://*/*", "https://*/*" ],
    "version": "0.1"
