@@ -10,17 +10,20 @@ function upload(imageUrl, fileName, accToken)
 	_fileName = fileName
 	_accToken = accToken;
 	var getPhotoHttpRequest = new XMLHttpRequest();
-	getPhotoHttpRequest.onload = function()
-	{
-		_photoData = getPhotoHttpRequest.response;
-		var getPhotoUploadServer = new XMLHttpRequest();
-		getPhotoUploadServer.open('GET', 'https://api.vk.com/method/photos.getMessagesUploadServer?access_token=' + _accToken);
-		getPhotoUploadServer.onload = onGetPhotoUploadServer;
-		getPhotoUploadServer.send();
-	}
+	getPhotoHttpRequest.onload = onGetPhoto;
 	getPhotoHttpRequest.responseType = 'blob';
 	getPhotoHttpRequest.open('GET', imageUrl);
 	getPhotoHttpRequest.send();
+}
+
+fucntion onGetPhoto(event)
+{
+	var answer = JSON.parse(event.target.response);
+	_photoData = event.response;
+	var getPhotoUploadServer = new XMLHttpRequest();
+	getPhotoUploadServer.open('GET', 'https://api.vk.com/method/photos.getMessagesUploadServer?access_token=' + _accToken);
+	getPhotoUploadServer.onload = onGetPhotoUploadServer;
+	getPhotoUploadServer.send();
 }
 
 function onGetPhotoUploadServer(event)
@@ -183,11 +186,11 @@ document.addEventListener("DOMContentLoaded", function()
 	}
 	else
 	{
-	thereIsAnError('Parsing image url', 'params || params.length != 2');
+		thereIsAnError('Parsing image url', 'params || params.length != 2');
 	}
 });
 
 function thereIsAnError(textToShow, errorToShow)
 {
-  document.getElementById('wrap').innerHTML = '<p></p><br/><br/><center><h1>Wow! Some error arrived!</h1></center><br/><br/><p>' + textToShow + '</p><br/><br/><p>' + errorToShow + '</p><p>' + imageUrl + '</p>';
+	document.getElementById('error_message').innerHTML = '<p></p><br/><br/><center><h1>Wow! Some error arrived!</h1></center><br/><br/><p>' + textToShow + '</p><br/><br/><p>' + errorToShow + '</p><p>' + imageUrl + '</p>';
 }
