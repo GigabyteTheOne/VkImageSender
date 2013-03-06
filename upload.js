@@ -33,7 +33,7 @@ function removeClass(ele,cls) {
 
 function upload(imageUrl, fileName, accToken)
 {
-	_fileName = fileName
+	_fileName = fileName;
 	_accToken = accToken;
 	var getPhotoHttpRequest = new XMLHttpRequest();
 	getPhotoHttpRequest.onload = onGetPhoto;
@@ -54,22 +54,33 @@ function onGetPhoto(event)
 function onGetPhotoUploadServer(event)
 {
 	var answer = JSON.parse(event.target.response);
-// 	alert(event.target.response);
+	// alert(event.target.response);
 	if (answer.response.upload_url)
 	{
 		var formData = new FormData();
-		formData.append("photo", _photoData, _fileName + ".jpg");
+		formData.append("photo", _photoData, _fileName);
 		var postPhotoRequest = new XMLHttpRequest();
 		postPhotoRequest.open("POST", answer.response.upload_url, true);
 		postPhotoRequest.onload = onPostPhoto;
 		postPhotoRequest.send(formData);
 	}
+	else
+	{
+		alert("Error");
+	}
 }
 
 function onPostPhoto(event)
 {
+	// alert(event.target.response);
+	if (event.target.response.indexOf("Security Breach2") !== -1)
+	{
+		alert(event.target.response);
+		return;
+	}
+
 	var answer = JSON.parse(event.target.response);
-// 	alert(event.target.response);
+	
  	if (answer.photo)
  	{
  		var savePhotoRequest = new XMLHttpRequest();
@@ -96,6 +107,7 @@ function onSavePhoto(event)
 		document.getElementById("loader_image_wrapper").style.display = "none";
 		document.getElementById("photo_image_wrapper").style.display = "block";
 		document.getElementById("photo_image").src = _photoObject.src;
+		refreshButtonState();
 	}
 	else
 	{
@@ -105,9 +117,9 @@ function onSavePhoto(event)
 
 function sendMessage()
 {
-	if (_uids && _photoObject)
+	if ((_uids.length > 0) && (_photoObject))
 	{
-		var messageText = document.getElementById("message_text").value;
+		var messageText = document.getElementById("message_text").innerHTML;
 		for (var index = 0; index < _uids.length; index++)
 		{
 			var uid = _uids[index];
@@ -119,7 +131,6 @@ function sendMessage()
 				"&access_token=" + _accToken);
 			sendMessageRequest.onload = onSendMessage;
 			sendMessageRequest.send();
-// 			onSendMessage();
 		}
 	}
 }
@@ -128,7 +139,11 @@ function sendMessage()
 function onSendMessage(event)
 {
 	//todo: write message in window, set timer with 5 seconds to close and button (like shutdown in ubuntu)
-// 	alert("Sended");
+	var answer = JSON.parse(event.target.response);
+	if (answer.response)
+	{
+		alert("Сообщение отправлено");
+	}
 // 	window.close();
 }
 
@@ -196,10 +211,11 @@ function onGetFriends(event)
 			table.appendChild(tr);
 			div.appendChild(table);
 			
-			
-			
 			friendDiv.appendChild(div);
 		}
+
+		friendDiv.style.display = "block";
+		document.getElementById("loader_friends_wrapper").style.display = "none";
 	}
 }
 
@@ -226,12 +242,30 @@ function selectFriend(event)
 			}
 			_uids.splice(index, 1);
 		}
-		
 	}
+	refreshButtonState();
+}
+
+function refreshButtonState()
+{
+	var sendButton = document.getElementById("send_button");
+	if ((_uids.length > 0) && (_photoObject))
+	{
+		removeClass(sendButton, "disabled");
+	}
+	else
+	{
+		addClass(sendButton, "disabled");
+	}
+	
 }
 
 document.addEventListener("DOMContentLoaded", function()
 {
+	var sendButton = document.getElementById("send_button");
+	sendButton.onclick = sendMessage;
+	refreshButtonState();
+
 	var params = window.location.hash.substring(1).split('&');
 	if(params && params.length == 2)
 	{
@@ -264,7 +298,7 @@ document.addEventListener("DOMContentLoaded", function()
 	{
 		thereIsAnError('Parsing image url', 'params || params.length != 2');
 	}
-	document.getElementById("send_button").onclick = sendMessage;
+	
 });
 
 

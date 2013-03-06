@@ -31,22 +31,34 @@ function onGetAccessToken(items)
 
 function uploadImage()
 {
+	// checkAuth();
+
 	var loadUrl = 'upload.html#' + imageURL + '&' + vkToken;
 // 	alert(loadUrl);
-	if (authTabId)
+
+	chrome.windows.create({
+		"url": loadUrl, 
+		"type": "panel",
+		"width": 600,
+		"height": 600
+		
+	}, function(window) {});
+}
+
+function checkAuth()
+{
+	var getUserRequest = new XMLHttpRequest();
+	getUserRequest.open('GET', 'https://api.vk.com/method/users.get?uids=1&access_token=' + _accToken);
+	getUserRequest.onload = onGetUserRequest;
+	getUserRequest.send();
+}
+
+function onGetUserRequest(event)
+{
+	var answer = JSON.parse(event.target.response);
+	if ((!answer) || (!answer.response))
 	{
-		chrome.tabs.update(authTabId, {'url': loadUrl, 'active': true}, function(tab){});
-		delete authTabId;
-	}
-	else 
-	{
-		chrome.windows.create({
-			"url": loadUrl, 
-			"type": "panel",
-			"width": 600,
-			"height": 600
-			
-		}, function(window) {});
+		getVkAccesToken();
 	}
 }
 
@@ -81,6 +93,7 @@ function getVkAccesToken()
 							chrome.storage.local.set({'vkaccess_token': accToken}, function()
 							{
 								uploadImage();
+								chrome.tabs.remove(tabId);
 							});
 						}
 						else
