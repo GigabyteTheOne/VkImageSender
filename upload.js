@@ -136,6 +136,7 @@ function sendMessage()
 				"&attachment=" + _photoObject.id +
 				"&access_token=" + _accToken);
 			sendMessageRequest.onload = onSendMessage;
+			sendMessageRequest.uid = uid;
 			sendMessageRequest.send();
 		}
 	}
@@ -146,11 +147,18 @@ function onSendMessage(event)
 {
 	//todo: write message in window, set timer with 5 seconds to close and button (like shutdown in ubuntu)
 	var answer = JSON.parse(event.target.response);
-	if (answer.response)
+	if (answer.response && event.target.uid)
 	{
-		alert("Сообщение отправлено");
+		var index = _uids.indexOf(event.target.uid);
+		if (index !== -1)
+		{
+			_uids.splice(index, 1);
+		}
+		if (_uids.length === 0) 
+		{
+			window.close();
+		}
 	}
-// 	window.close();
 }
 
 function beginLoadFriendList()
@@ -231,6 +239,7 @@ function selectFriend(event)
 	var uid = row.getAttribute("uid");
 	if (uid)
 	{
+
 		var index = _uids.indexOf(uid);
 		if (index === -1)
 		{
