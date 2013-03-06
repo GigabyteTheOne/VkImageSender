@@ -57,6 +57,12 @@ function onGetPhotoUploadServer(event)
 	// alert(event.target.response);
 	if (answer.response.upload_url)
 	{
+		var ext = _fileName.split('.').pop();
+		if (!(ext && ext.length < 5))
+		{
+			_fileName += ".jpg";
+		}
+
 		var formData = new FormData();
 		formData.append("photo", _photoData, _fileName);
 		var postPhotoRequest = new XMLHttpRequest();
@@ -66,7 +72,7 @@ function onGetPhotoUploadServer(event)
 	}
 	else
 	{
-		alert("Error");
+		alert("Error: " + event.target.response);
 	}
 }
 
@@ -100,7 +106,7 @@ function onPostPhoto(event)
 function onSavePhoto(event)
 {
 	var answer = JSON.parse(event.target.response);
-// 	alert(event.target.response);
+	// alert(event.target.response);
 	if (answer.response)
 	{
 		_photoObject = answer.response[0];
@@ -111,7 +117,7 @@ function onSavePhoto(event)
 	}
 	else
 	{
-		alert("Error");
+		alert("Error: " + event.target.response);
 	}
 }
 
