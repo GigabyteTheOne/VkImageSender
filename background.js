@@ -133,7 +133,7 @@ function getUrlParam(url, sname)
 
 chrome.contextMenus.create(
 {
-	"title": "Send image in VK",
+	"title": chrome.i18n.getMessage("context_menu_item_title"),
 	"type": "normal",
 	"contexts": ["image"],
 	"onclick": onContextMenuItemClick
