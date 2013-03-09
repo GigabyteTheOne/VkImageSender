@@ -45,10 +45,56 @@ function upload(imageUrl, fileName, accToken)
 function onGetPhoto(event)
 {
 	_photoData = event.srcElement.response;
-	var getPhotoUploadServer = new XMLHttpRequest();
-	getPhotoUploadServer.open('GET', 'https://api.vk.com/method/photos.getMessagesUploadServer?access_token=' + _accToken);
-	getPhotoUploadServer.onload = onGetPhotoUploadServer;
-	getPhotoUploadServer.send();
+	// alert(getObjectDescription(event.srcElement.response));
+
+
+	var ext = _fileName.split('.').pop();
+	if (!(ext && ext.length < 5))
+	{
+		var fileType = event.srcElement.response.type;
+		var fileTypeArr = fileType.split('/');
+		ext = "jpg";
+		if (fileTypeArr.length > 1) 
+		{
+			ext = fileTypeArr.pop();
+		}
+		_fileName += "." + ext;
+	}
+	ext = ext.toLowerCase();
+
+	if (ext !== "gif")
+	{
+		var getPhotoUploadServer = new XMLHttpRequest();
+		getPhotoUploadServer.open('GET', 'https://api.vk.com/method/photos.getMessagesUploadServer?access_token=' + _accToken);
+		getPhotoUploadServer.onload = onGetPhotoUploadServer;
+		getPhotoUploadServer.send();
+	}
+	else
+	{
+		var getDocUploadServer = new XMLHttpRequest();
+		getDocUploadServer.open('GET', 'https://api.vk.com/method/docs.getUploadServer?access_token=' + _accToken);
+		getDocUploadServer.onload = onGetDocUploadServer;
+		getDocUploadServer.send();
+	}
+}
+
+function onGetDocUploadServer(event)
+{
+	var answer = JSON.parse(event.target.response);
+	// alert(event.target.response);
+	if (answer.response.upload_url)
+	{
+		var formData = new FormData();
+		formData.append("file", _photoData, _fileName);
+		var postPhotoRequest = new XMLHttpRequest();
+		postPhotoRequest.open("POST", answer.response.upload_url, true);
+		postPhotoRequest.onload = onPostDoc;
+		postPhotoRequest.send(formData);
+	}
+	else
+	{
+		alert("Error: " + event.target.response);
+	}
 }
 
 function onGetPhotoUploadServer(event)
@@ -57,12 +103,6 @@ function onGetPhotoUploadServer(event)
 	// alert(event.target.response);
 	if (answer.response.upload_url)
 	{
-		var ext = _fileName.split('.').pop();
-		if (!(ext && ext.length < 5))
-		{
-			_fileName += ".jpg";
-		}
-
 		var formData = new FormData();
 		formData.append("photo", _photoData, _fileName);
 		var postPhotoRequest = new XMLHttpRequest();
@@ -74,6 +114,30 @@ function onGetPhotoUploadServer(event)
 	{
 		alert("Error: " + event.target.response);
 	}
+}
+
+function onPostDoc(event)
+{
+	// alert(event.target.response);
+	if (event.target.response.indexOf("Security Breach2") !== -1)
+	{
+		alert(event.target.response);
+		return;
+	}
+
+	var answer = JSON.parse(event.target.response);
+	
+ 	if (answer.file)
+ 	{
+ 		var saveDocRequest = new XMLHttpRequest();
+ 		saveDocRequest.open("GET", "https://api.vk.com/method/docs.save?file=" + answer.file + "&access_token=" + _accToken);
+ 		saveDocRequest.onload = onSaveDoc;
+ 		saveDocRequest.send();
+ 	}
+ 	else
+ 	{
+ 		alert("Doc not uploaded");
+ 	}
 }
 
 function onPostPhoto(event)
@@ -103,6 +167,24 @@ function onPostPhoto(event)
  	}
 }
 
+function onSaveDoc(event)
+{
+	var answer = JSON.parse(event.target.response);
+	// alert(event.target.response);
+	if (answer.response)
+	{
+		_docObject = answer.response[0];
+		document.getElementById("loader_image_wrapper").style.display = "none";
+		document.getElementById("photo_image_wrapper").style.display = "block";
+		document.getElementById("photo_image").src = _docObject.url;
+		refreshButtonState();
+	}
+	else
+	{
+		alert("Error: " + event.target.response);
+	}
+}
+
 function onSavePhoto(event)
 {
 	var answer = JSON.parse(event.target.response);
@@ -123,17 +205,28 @@ function onSavePhoto(event)
 
 function sendMessage()
 {
-	if ((_uids.length > 0) && (_photoObject))
+	if ((_uids.length > 0) && (_photoObject || _docObject))
 	{
 		var messageText = document.getElementById("message_text").innerHTML;
 		for (var index = 0; index < _uids.length; index++)
 		{
 			var uid = _uids[index];
+
+			var attachmentStr = "";
+			if (_photoObject) 
+			{
+				attachmentStr = _photoObject.id;
+			}
+			else
+			{
+				attachmentStr = "doc" + _docObject.owner_id + "_" + _docObject.did;
+			}
+
 			var sendMessageRequest = new XMLHttpRequest();
 			sendMessageRequest.open("GET", "https://api.vk.com/method/messages.send?" + 
 				"uid=" + uid + 
 				"&message=" + messageText +
-				"&attachment=" + _photoObject.id +
+				"&attachment=" + attachmentStr +
 				"&access_token=" + _accToken);
 			sendMessageRequest.onload = onSendMessage;
 			sendMessageRequest.uid = uid;
@@ -264,7 +357,7 @@ function selectFriend(event)
 function refreshButtonState()
 {
 	var sendButton = document.getElementById("send_button");
-	if ((_uids.length > 0) && (_photoObject))
+	if ((_uids.length > 0) && (_photoObject || _docObject))
 	{
 		removeClass(sendButton, "disabled");
 	}
