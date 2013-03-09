@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>VKImageSender</title>
+		<title>VK Image Sender</title>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 		<style media="screen">
 			*
@@ -233,7 +233,7 @@
 	<div id="right_div">
         <div id="loader_friends_wrapper" class="centered">
             <img src="indicator.gif" width="64" height="64"/>
-            <div>Загрузка списка друзей...</div>
+            <div id="friends_loader_text">Загрузка списка друзей...</div>
         </div>
 		<div id="friends_list" style="display: none"></div>
 	</div>
@@ -241,13 +241,13 @@
 	<div id="left_div">
 		<div id="loader_image_wrapper" class="centered">
 			<img src="indicator.gif" width="64" height="64"/>
-            <div>Загрузка изображения...</div>
+            <div id="image_loader_text">Загрузка изображения...</div>
 		</div>
 		<div id="photo_image_wrapper" class="centered">
 			<img id="photo_image" src="" />
 		</div>
 		<div id="message_container">
-            <div style="margin: 5px 0px;">Текст сообщения:</div>
+            <div style="margin: 5px 0px;" id="send_text">Текст сообщения:</div>
             <div tabindex="0" contenteditable="true" id="message_text"></div>
             <div id="send_button_div" class="button_blue">
                 <button id="send_button">Отправить</button>

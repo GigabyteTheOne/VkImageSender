@@ -1,0 +1,34 @@
+{
+	"chrome_extension_description":
+	{
+		"message": "Allows you to send pictures through VK messages"
+	},
+	"context_menu_item_title":
+	{
+		"message": "Send image through VK message"
+	},
+	"upload_page_title":
+	{
+		"message": "Image sending through VK messages"
+	},
+	"upload_send_text_title":
+	{
+		"message": "Message text:"
+	},
+	"upload_send_button_title":
+	{
+		"message": "Send"
+	},
+	"upload_friends_loader_text":
+	{
+		"message": "Friend list loading..."
+	},
+	"upload_image_loader_text":
+	{
+		"message": "Image loading..."
+	},
+	"lang":
+	{
+		"message": "en"
+	}
+}

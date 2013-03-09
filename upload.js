@@ -374,6 +374,12 @@ document.addEventListener("DOMContentLoaded", function()
 	sendButton.onclick = sendMessage;
 	refreshButtonState();
 
+	document.getElementById("send_button").innerHTML = chrome.i18n.getMessage("upload_send_button_title");
+	document.getElementById("send_text").innerHTML = chrome.i18n.getMessage("upload_send_text_title");
+	document.getElementById("friends_loader_text").innerHTML = chrome.i18n.getMessage("upload_friends_loader_text");
+	document.getElementById("image_loader_text").innerHTML = chrome.i18n.getMessage("upload_image_loader_text");
+	document.title = chrome.i18n.getMessage("upload_page_title");
+
 	var params = window.location.hash.substring(1).split('&');
 	if(params && params.length == 2)
 	{
