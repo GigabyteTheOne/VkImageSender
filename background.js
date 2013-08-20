@@ -35,14 +35,27 @@ function uploadImage()
 
 	var loadUrl = 'upload.html#' + imageURL + '&' + vkToken;
 // 	alert(loadUrl);
+	
+	var left = 100;
+	var top = 100;
 
-	chrome.windows.create({
-		"url": loadUrl, 
-		"type": "panel",
-		"width": 600,
-		"height": 600
-		
-	}, function(window) {});
+	chrome.storage.local.get({'windowCoord': {}}, function (items) {
+		if (items['windowCoord'])
+		{
+			var coords = items['windowCoord'];
+			left = coords.x;
+			top = coords.y;
+		}
+
+		var wnd = chrome.windows.create({
+			"url": loadUrl, 
+			"type": "panel",
+			"width": 600,
+			"height": 600,
+			"left": left,
+			"top": top
+		}, function(window) {});
+	});
 }
 
 function checkAuth()

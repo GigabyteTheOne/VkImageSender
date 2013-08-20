@@ -205,9 +205,15 @@ function onSavePhoto(event)
 
 function sendMessage()
 {
+	chrome.storage.local.set({'windowCoord': {
+		x: window.screenX,
+		y: window.screenY
+	}});
+
 	if ((_uids.length > 0) && (_photoObject || _docObject))
 	{
-		var messageText = document.getElementById("message_text").innerHTML;
+		var messageContainer = document.getElementById("message_text");
+		var messageText = messageContainer.innerText || messageContainer.textContent || "";
 		for (var index = 0; index < _uids.length; index++)
 		{
 			var uid = _uids[index];
@@ -328,6 +334,11 @@ function onGetFriends(event)
 
 function selectFriend(event)
 {
+	chrome.storage.local.set({'windowCoord': {
+		x: window.screenX,
+		y: window.screenY
+	}});
+
 	var row = event.currentTarget;
 	var uid = row.getAttribute("uid");
 	if (uid)
@@ -380,6 +391,8 @@ document.addEventListener("DOMContentLoaded", function()
 	document.getElementById("image_loader_text").innerHTML = chrome.i18n.getMessage("upload_image_loader_text");
 	document.title = chrome.i18n.getMessage("upload_page_title");
 
+	document.getElementById("message_text").onkeypress = onMessageTextKeyPress;
+
 	var params = window.location.hash.substring(1).split('&');
 	if(params && params.length == 2)
 	{
@@ -415,7 +428,17 @@ document.addEventListener("DOMContentLoaded", function()
 	
 });
 
-
+function onMessageTextKeyPress(e) 
+{ 
+	console.log(e);
+	if (e.which === 13)
+	{
+		if (e.ctrlKey)
+			sendMessage();
+		return false;
+	}
+	return true
+}
 
 function thereIsAnError(textToShow, errorToShow)
 {
