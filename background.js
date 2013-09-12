@@ -77,7 +77,7 @@ function onGetUserRequest(event)
 
 function getVkAccesToken()
 {
-	var appId = "3467502";
+	var appId = "";
 	var scope = "docs,offline,messages,photos";
 	var redirectUri = encodeURIComponent("http://oauth.vk.com/blank.html");
 	
