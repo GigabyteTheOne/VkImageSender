@@ -38,20 +38,26 @@ function uploadImage()
 	
 	var left = 100;
 	var top = 100;
+	var width = 650;
+	var height = 560;
 
 	chrome.storage.local.get({'windowCoord': {}}, function (items) {
 		if (items['windowCoord'])
 		{
 			var coords = items['windowCoord'];
-			left = coords.x;
-			top = coords.y;
+			if (coords.x)
+				left = coords.x;
+			if (coords.y)
+				top = coords.y;
+			if (coords.h)
+				height = coords.h;
 		}
 
 		var wnd = chrome.windows.create({
 			"url": loadUrl, 
 			"type": "panel",
-			"width": 600,
-			"height": 600,
+			"width": width,
+			"height": height,
 			"left": left,
 			"top": top
 		}, function(window) {});
@@ -122,9 +128,6 @@ function getVkAccesToken()
 			}
 		});
 	});
-	
-// 	if (callback)
-// 		callback();
 }
 
 function getUrlParam(url, sname)

@@ -13,7 +13,7 @@
 	},
 	"upload_send_text_title":
 	{
-		"message": "Текст сообщения:"
+		"message": "Введите текст сообщения"
 	},
 	"upload_send_button_title":
 	{
@@ -30,5 +30,17 @@
 	"lang":
 	{
 		"message": "ru"
+	},
+	"error_message_title":
+	{
+		"message": "О, нет! Произошла какая-то ошибка... :("
+	},
+	"search_input_placeholder":
+	{
+		"message": "Начните вводить имя друга"
+	},
+	"not_found":
+	{
+		"message": "Не найдено"
 	}
 }

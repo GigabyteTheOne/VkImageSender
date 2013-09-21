@@ -6,13 +6,13 @@
   },
   "description": "__MSG_chrome_extension_description__",
 	"icons": {
-		"128": "icon128.png",
-		"16": "icon16.png",
-		"48": "icon48.png"
+		"128": "images/ico/icon128.png",
+		"16": "images/ico/icon16.png",
+		"48": "images/ico/icon48.png"
 	},
    "manifest_version": 2,
    "default_locale": "en",
    "name": "VK Image Sender",
    "permissions": [ "contextMenus", "tabs", "storage" , "http://*/*", "https://*/*" ],
-   "version": "1.3"
+   "version": "2.0"
 }

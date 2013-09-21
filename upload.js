@@ -5,6 +5,7 @@ var _accToken;
 var _photoObject;
 var _userId;
 var _uids = [];
+var _allFriendsArr = [];
 
 function getObjectDescription(object)
 {
@@ -175,7 +176,7 @@ function onSaveDoc(event)
 	{
 		_docObject = answer.response[0];
 		document.getElementById("loader_image_wrapper").style.display = "none";
-		document.getElementById("photo_image_wrapper").style.display = "block";
+		document.getElementById("photo_image").style.display = "block";
 		document.getElementById("photo_image").src = _docObject.url;
 		refreshButtonState();
 	}
@@ -193,7 +194,7 @@ function onSavePhoto(event)
 	{
 		_photoObject = answer.response[0];
 		document.getElementById("loader_image_wrapper").style.display = "none";
-		document.getElementById("photo_image_wrapper").style.display = "block";
+		document.getElementById("photo_image").style.display = "block";
 		document.getElementById("photo_image").src = _photoObject.src;
 		refreshButtonState();
 	}
@@ -207,13 +208,15 @@ function sendMessage()
 {
 	chrome.storage.local.set({'windowCoord': {
 		x: window.screenX,
-		y: window.screenY
+		y: window.screenY,
+		w: window.innerWidth,
+		h: window.innerHeight,
 	}});
 
 	if ((_uids.length > 0) && (_photoObject || _docObject))
 	{
 		var messageContainer = document.getElementById("message_text");
-		var messageText = messageContainer.innerText || messageContainer.textContent || "";
+		var messageText = messageContainer.value || "";
 		for (var index = 0; index < _uids.length; index++)
 		{
 			var uid = _uids[index];
@@ -277,58 +280,69 @@ function onGetFriends(event)
 	var answer = JSON.parse(event.target.response);
 	if (answer.response)
 	{
-		var friendDiv = document.getElementById("friends_list");
-		for (var friendNum = 0; friendNum < answer.response.length; friendNum++)
-		{
-			var friend = answer.response[friendNum];
-			
-			var div = document.createElement("div");
-			div.className = "friend_row";
-			div.setAttribute("uid", friend.uid);
-			div.onclick = selectFriend;
-			
-			var flag = document.createElement("div");
-			flag.className = "flag";
-			div.appendChild(flag);
-			
-			var table = document.createElement("table");
-			var tr = document.createElement("tr");
-			var td = document.createElement("td");
-			td.className = "photo";
-			
-			var img = document.createElement("img");
-			
-			img.src = friend.photo;
-			
-			td.appendChild(img);
-			tr.appendChild(td);
-			
-			td = document.createElement("td");
-			td.className = "info";
-			
-			var name = document.createElement("a");
-			name.innerHTML = friend.first_name + " " + friend.last_name;
-			name.setAttribute("uid", friend.uid);
-			
-			var onlineDiv = document.createElement("div");
-			onlineDiv.className = "online";
-			if (friend.online == 1)
-			{
-				onlineDiv.innerHTML = "online";
-			}
-			
-			td.appendChild(name);
-			td.appendChild(onlineDiv);
-			tr.appendChild(td);
-			
-			table.appendChild(tr);
-			div.appendChild(table);
-			
-			friendDiv.appendChild(div);
-		}
+		_allFriendsArr = answer.response;
+		refreshFriendsList(_allFriendsArr);
 
-		friendDiv.style.display = "block";
 		document.getElementById("loader_friends_wrapper").style.display = "none";
+	}
+}
+
+function refreshFriendsList (friendsArr) {
+	var friendsTable = document.getElementById("friends_list").tBodies[0];
+	friendsTable.innerHTML = "";
+
+	if (friendsArr.length === 0) {
+		var tr = document.createElement("tr");
+		var p = document.createElement("p");
+		p.className = "text-center";
+		p.innerText = chrome.i18n.getMessage("not_found");
+		tr.appendChild(p);
+		friendsTable.appendChild(tr);
+	}
+
+	for (var friendNum = 0; friendNum < friendsArr.length; friendNum++)
+	{
+		var friend = friendsArr[friendNum];
+		
+		var tr = document.createElement("tr");
+		tr.setAttribute("uid", friend.uid);
+		tr.onclick = selectFriend;
+		
+		var td = document.createElement("td");
+		td.className = "col_photo";
+		
+		var img = document.createElement("img");
+		img.className = "img-thumbnail";
+		img.src = friend.photo;
+		
+		td.appendChild(img);
+		tr.appendChild(td);
+		
+		td = document.createElement("td");
+		// td.className = "info";
+		
+		var name = document.createElement("a");
+		name.innerHTML = friend.first_name + " " + friend.last_name;
+		name.setAttribute("uid", friend.uid);
+		
+		var onlineDiv = document.createElement("div");
+		var onlineSpan = document.createElement("span");
+		onlineSpan.className = "label label-info my_label";
+		if (friend.online == 1)
+			onlineSpan.innerHTML = "online";
+		onlineDiv.appendChild(onlineSpan);
+		
+		td.appendChild(name);
+		td.appendChild(onlineDiv);
+		tr.appendChild(td);
+
+		td = document.createElement("td");
+		img = document.createElement("img");
+		img.className = "flag";
+		td.appendChild(img);
+		tr.appendChild(td);
+		
+		friendsTable.appendChild(tr);
 	}
 }
 
@@ -336,7 +350,9 @@ function selectFriend(event)
 {
 	chrome.storage.local.set({'windowCoord': {
 		x: window.screenX,
-		y: window.screenY
+		y: window.screenY,
+		w: window.innerWidth,
+		h: window.innerHeight,
 	}});
 
 	var row = event.currentTarget;
@@ -385,11 +401,32 @@ document.addEventListener("DOMContentLoaded", function()
 	sendButton.onclick = sendMessage;
 	refreshButtonState();
 
-	document.getElementById("send_button").innerHTML = chrome.i18n.getMessage("upload_send_button_title");
-	document.getElementById("send_text").innerHTML = chrome.i18n.getMessage("upload_send_text_title");
-	document.getElementById("friends_loader_text").innerHTML = chrome.i18n.getMessage("upload_friends_loader_text");
-	document.getElementById("image_loader_text").innerHTML = chrome.i18n.getMessage("upload_image_loader_text");
-	document.title = chrome.i18n.getMessage("upload_page_title");
+	document.getElementById("s_search").onkeyup = onFriendFilterChange;
+	document.getElementById("friends_list").onclick = onFriendFilterClick;
+
+	var sendButtonTitle = 
+		friendsLoaderText = 
+		imageLoaderText = 
+		documentTitle = "";
+
+	if (chrome.i18n) {
+		sendButtonTitle = chrome.i18n.getMessage("upload_send_button_title");
+		friendsLoaderText = chrome.i18n.getMessage("upload_friends_loader_text");
+		imageLoaderText = chrome.i18n.getMessage("upload_image_loader_text");
+		documentTitle = chrome.i18n.getMessage("upload_page_title");
+	}
+	else {
+		sendButtonTitle = "Отправить";
+		friendsLoaderText = "Загрузка списка друзей...";
+		imageLoaderText = "Загрузка изображения...";
+		documentTitle = "Отправка изображения с помощью сообщения ВКонтакте";
+	}
+
+
+	document.getElementById("send_button").innerText = sendButtonTitle;
+	document.getElementById("friends_loader_text").innerHTML = friendsLoaderText;
+	document.getElementById("image_loader_text").innerHTML = imageLoaderText;
+	document.title = documentTitle;
 
 	document.getElementById("message_text").onkeypress = onMessageTextKeyPress;
 
@@ -426,11 +463,21 @@ document.addEventListener("DOMContentLoaded", function()
 		thereIsAnError('Parsing image url', 'params || params.length != 2');
 	}
 	
+	document.getElementById("message_text").placeholder = chrome.i18n.getMessage("upload_send_text_title");
+	document.getElementById("s_search").placeholder = chrome.i18n.getMessage("search_input_placeholder");
+	
+	window.onresize = resizeElements;
+	resizeElements();
 });
+
+function resizeElements() {
+	var height = window.innerHeight;
+	listHeight = height - 90;
+	document.getElementById("friends_list_wrapper").style.height = listHeight + "px";
+}
 
 function onMessageTextKeyPress(e) 
 { 
-	console.log(e);
 	if (e.which === 13)
 	{
 		if (e.ctrlKey)
@@ -440,7 +487,49 @@ function onMessageTextKeyPress(e)
 	return true
 }
 
+function onFriendFilterChange (e) {
+	if (e.target) 
+	{
+		var text = e.target.value;
+		text = text.toLowerCase();
+		var fountFriends = [];
+
+		for (var i = 0; i < _allFriendsArr.length; i++) {
+			var friend = _allFriendsArr[i];
+			var string = friend.first_name + " " + friend.last_name;
+			string = string.toLowerCase();
+			if (string.indexOf(text) !== -1) {
+				fountFriends.push(friend);
+			}
+		}
+
+		refreshFriendsList(fountFriends);
+	}
+}
+
+function onFriendFilterClick (e) {
+	document.getElementById("s_search").focus();
+}
+
 function thereIsAnError(textToShow, errorToShow)
 {
-	document.getElementById('error_message').innerHTML = '<p></p><br/><br/><center><h1>Wow! Some error arrived!</h1></center><br/><br/><p>' + textToShow + '</p><br/><br/><p>' + errorToShow + '</p><p>' + imageUrl + '</p>';
+	// document.getElementById('error_message').innerHTML = '<p></p><br/><br/><center><h1>Wow! Some error arrived!</h1></center><br/><br/><p>' + textToShow + '</p><br/><br/><p>' + errorToShow + '</p><p>' + imageUrl + '</p>';
+	var errorDim = document.getElementById('error_message');
+	var div = document.createElement("div");
+	div.className = "alert alert-danger";
+
+	var errorDescription = chrome.i18n.getMessage("error_message_title");
+
+	div.innerHTML = "<b>" +errorDescription+ "</b><br />" + 
+					textToShow + "<br />" +
+					errorToShow;
+
+	errorDim.appendChild(div);
+	errorDim.style.display = "block";
+
+	document.getElementById('main_content').style.display = "none";
 }
+
+
+
+
