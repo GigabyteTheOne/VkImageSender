@@ -23,6 +23,10 @@
 	{
 		"message": "Загрузка списка друзей..."
 	},
+	"upload_dialogs_loader_text":
+	{
+		"message": "Загрузка диалогов..."
+	},
 	"upload_image_loader_text":
 	{
 		"message": "Загрузка изображения..."
@@ -42,5 +46,13 @@
 	"not_found":
 	{
 		"message": "Не найдено"
+	},
+	"nav_bar_tab1_text":
+	{
+		"message": "Друзья"
+	},
+	"nav_bar_tab2_text":
+	{
+		"message": "Диалоги"
 	}
 }

@@ -23,6 +23,10 @@
 	{
 		"message": "Friend list loading..."
 	},
+	"upload_dialogs_loader_text":
+	{
+		"message": "Dialogs loading..."
+	},
 	"upload_image_loader_text":
 	{
 		"message": "Image loading..."
@@ -42,5 +46,13 @@
 	"not_found":
 	{
 		"message": "Not found"
+	},
+	"nav_bar_tab1_text":
+	{
+		"message": "Friends"
+	},
+	"nav_bar_tab2_text":
+	{
+		"message": "Dialogs"
 	}
 }

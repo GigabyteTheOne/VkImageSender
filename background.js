@@ -38,7 +38,7 @@ function uploadImage()
 	
 	var left = 100;
 	var top = 100;
-	var width = 650;
+	var width = 790;
 	var height = 560;
 
 	chrome.storage.local.get({'windowCoord': {}}, function (items) {

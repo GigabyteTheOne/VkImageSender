@@ -3,6 +3,7 @@ var _fileName;
 var _photoData;
 var _accToken;
 var _photoObject;
+var _docObject;
 var _userId;
 var _uids = [];
 var _allFriendsArr = [];
@@ -27,7 +28,7 @@ function addClass(ele,cls) {
  
 function removeClass(ele,cls) {
 	if (hasClass(ele,cls)) {
-    	var reg = new RegExp('(\\s|^)'+cls+'(\\s|$)');
+    var reg = new RegExp('(\\s|^)'+cls+'(\\s|$)');
 		ele.className=ele.className.replace(reg,' ');
 	}
 }
@@ -46,8 +47,6 @@ function upload(imageUrl, fileName, accToken)
 function onGetPhoto(event)
 {
 	_photoData = event.srcElement.response;
-	// alert(getObjectDescription(event.srcElement.response));
-
 
 	var ext = _fileName.split('.').pop();
 	if (!(ext && ext.length < 5))
@@ -143,7 +142,6 @@ function onPostDoc(event)
 
 function onPostPhoto(event)
 {
-	// alert(event.target.response);
 	if (event.target.response.indexOf("Security Breach2") !== -1)
 	{
 		alert(event.target.response);
@@ -195,7 +193,7 @@ function onSavePhoto(event)
 		_photoObject = answer.response[0];
 		document.getElementById("loader_image_wrapper").style.display = "none";
 		document.getElementById("photo_image").style.display = "block";
-		document.getElementById("photo_image").src = _photoObject.src;
+		document.getElementById("photo_image").src = _photoObject.src_xxbig || _photoObject.src_xbig || _photoObject.src_big || _photoObject.src_small || _photoObject.src;
 		refreshButtonState();
 	}
 	else
@@ -220,6 +218,7 @@ function sendMessage()
 		for (var index = 0; index < _uids.length; index++)
 		{
 			var uid = _uids[index];
+			var chatId;
 
 			var attachmentStr = "";
 			if (_photoObject) 
@@ -231,12 +230,25 @@ function sendMessage()
 				attachmentStr = "doc" + _docObject.owner_id + "_" + _docObject.did;
 			}
 
+			if (uid.indexOf("chat_") !== -1) {
+				chatId = uid.replace("chat_", "");
+			}
+
 			var sendMessageRequest = new XMLHttpRequest();
-			sendMessageRequest.open("GET", "https://api.vk.com/method/messages.send?" + 
-				"uid=" + uid + 
+
+			var receiver;
+			if (chatId) {
+				receiver = "chat_id=" + chatId;
+			}
+			else {
+				receiver = "uid=" + uid;
+			}
+			var url = "https://api.vk.com/method/messages.send?" + 
+				receiver + 
 				"&message=" + messageText +
 				"&attachment=" + attachmentStr +
-				"&access_token=" + _accToken);
+				"&access_token=" + _accToken;
+			sendMessageRequest.open("GET", url);
 			sendMessageRequest.onload = onSendMessage;
 			sendMessageRequest.uid = uid;
 			sendMessageRequest.send();
@@ -307,6 +319,10 @@ function refreshFriendsList (friendsArr) {
 		var tr = document.createElement("tr");
 		tr.setAttribute("uid", friend.uid);
 		tr.onclick = selectFriend;
+
+		if (_uids.indexOf(friend.uid + "") !== -1) {
+			tr.className = "selected";
+		}
 		
 		var td = document.createElement("td");
 		td.className = "col_photo";
@@ -346,6 +362,7 @@ function refreshFriendsList (friendsArr) {
 	}
 }
 
+
 function selectFriend(event)
 {
 	chrome.storage.local.set({'windowCoord': {
@@ -381,6 +398,227 @@ function selectFriend(event)
 	refreshButtonState();
 }
 
+
+
+
+function beginLoadDialogs()
+{
+	var getDialogsRequest = new XMLHttpRequest();
+	getDialogsRequest.onload = onGetDialogs;
+	getDialogsRequest.open("GET", "https://api.vk.com/method/messages.getDialogs?"+
+		"access_token=" + _accToken +
+		"&count=50"
+		);
+	getDialogsRequest.send();
+}
+
+function onGetDialogs(event)
+{
+	var answer = JSON.parse(event.target.response);
+	if (answer.response)
+	{
+		var dialogsArr = answer.response
+		if (dialogsArr.length > 0) {
+			delete dialogsArr[0];
+			dialogsArr.splice(0, 1);
+		}
+
+		var users = {};
+		for (var i = 0; i < dialogsArr.length; i++) {
+			if (!dialogsArr[i].admin_id) {
+				users[dialogsArr[i].uid] = {};
+			}
+			else {
+				var chatUsers = dialogsArr[i].chat_active.split(",");
+				for (var userIndex = 0; userIndex < chatUsers.length; userIndex++) {
+					users[chatUsers[userIndex]] = {};
+				}
+			}
+		}
+
+		var usersIdArr = [];
+		for (var userId in users) {
+			if (users.hasOwnProperty(userId)) {
+				usersIdArr.push(userId);
+    		
+				if (usersIdArr.length === 1000) {
+					break;
+				}
+			}
+		}
+
+		getUsersData(usersIdArr.join(","), function (usersData) {
+			for (var i = 0; i < usersData.length; i++) {
+				var user = users[usersData[i].uid];
+				if (user) {
+					user.data = usersData[i];
+				}
+			}
+
+			for (var i = 0; i < dialogsArr.length; i++) {
+				var dialogUsersData = [];
+
+				if (!dialogsArr[i].admin_id) {
+					var user = users[dialogsArr[i].uid];
+					dialogUsersData.push(user.data);
+				}
+				else {
+					var chatUsers = dialogsArr[i].chat_active.split(",");
+					for (var userIndex = 0; userIndex < chatUsers.length; userIndex++) {
+						var user = users[chatUsers[userIndex]];
+						dialogUsersData.push(user.data);
+					}
+				}
+
+				dialogsArr[i].usersData = dialogUsersData;
+			}
+
+			refreshDialogsList(dialogsArr);
+		});
+
+		document.getElementById("loader_dialogs_wrapper").style.display = "none";
+	}
+}
+
+
+function selectDialog() {
+	chrome.storage.local.set({'windowCoord': {
+		x: window.screenX,
+		y: window.screenY,
+		w: window.innerWidth,
+		h: window.innerHeight,
+	}});
+
+	var row = event.currentTarget;
+	var uid = row.getAttribute("uid");
+	if (uid) {
+		var index = _uids.indexOf(uid);
+		if (index === -1) {
+			if (!hasClass(row, "selected")) {
+				addClass(row, "selected");
+			}
+			_uids.push(uid);
+		}
+		else {
+			if (hasClass(row, "selected")) {
+				removeClass(row, "selected");
+			}
+			_uids.splice(index, 1);
+		}
+	}
+	refreshButtonState();
+}
+
+
+function refreshDialogsList (dialogsArr) {
+	var table = document.getElementById("dialogs_list").tBodies[0];
+	table.innerHTML = "";
+
+	if (dialogsArr.length === 0) {
+		var tr = document.createElement("tr");
+		var p = document.createElement("p");
+		p.className = "text-center";
+		p.innerText = chrome.i18n.getMessage("not_found") || "Нет диалогов";
+		tr.appendChild(p);
+		table.appendChild(tr);
+	}
+
+	for (var dialogNum = 0; dialogNum < dialogsArr.length; dialogNum++)
+	{
+		var dialog = dialogsArr[dialogNum];
+		var usersData = dialog.usersData;
+
+		if (!usersData[0]) {
+			continue;
+		}
+		
+		var tr = document.createElement("tr");
+		tr.setAttribute("uid", dialog.chat_id ? "chat_" + dialog.chat_id : dialog.uid);
+		tr.onclick = selectDialog;
+		
+		var td = document.createElement("td");
+		td.className = "col_photo";
+		
+		var img = document.createElement("img");
+		img.className = "img-thumbnail";
+		img.src = "images/multichat_50.png";
+		if (usersData.length === 1) {
+			if (usersData[0]) {
+				img.src = usersData[0].photo;
+			}
+		}
+		
+		
+		td.appendChild(img);
+		tr.appendChild(td);
+		
+		td = document.createElement("td");
+
+		var usernames = "";
+		for (var i = 0; i < usersData.length; i++) {
+			if (usersData[i]) {
+				if (usernames !== "") {
+					usernames += ", ";
+				}
+				usernames += usersData[i].first_name + " " + usersData[i].last_name;
+			}
+
+			if (i === 2) {
+				usernames += ", ...";
+				break;
+			}
+		}
+
+		var namesDiv = document.createElement("div");
+		namesDiv.className = "dialog_names";
+		namesDiv.innerHTML = usernames;
+		td.appendChild(namesDiv);
+
+		var text = dialog.body;
+		if (text.length > 100) {
+			text = text.substring(0, 100) + "...";
+		}
+		text = text.replace(/([^\s-]{5})([^\s-]{5})/, "$1&shy;$2");
+
+		var textDiv = document.createElement("div");
+		textDiv.className = "dialog_content";
+		textDiv.innerHTML = text;
+		td.appendChild(textDiv);
+
+		tr.appendChild(td);
+
+		td = document.createElement("td");
+		img = document.createElement("img");
+		img.className = "flag";
+		td.appendChild(img);
+		tr.appendChild(td);
+		
+		table.appendChild(tr);
+	}
+}
+
+
+
+
+
+function getUsersData(users, callback) {
+	var getUsersDataRequest = new XMLHttpRequest();
+	getUsersDataRequest.open("GET", "https://api.vk.com/method/users.get?"+
+		"access_token=" + _accToken +
+		"&fields=uid,first_name,last_name,photo" +
+		"&uids=" + users
+		);
+	getUsersDataRequest.onload = function (event) {
+		var answer = JSON.parse(event.target.response);
+		if (answer.response) {
+			callback(answer.response);
+		}
+	};
+	getUsersDataRequest.send();
+}
+
+
+
 function refreshButtonState()
 {
 	var sendButton = document.getElementById("send_button");
@@ -406,25 +644,56 @@ document.addEventListener("DOMContentLoaded", function()
 
 	var sendButtonTitle = 
 		friendsLoaderText = 
+		dialogsLoaderText = 
 		imageLoaderText = 
-		documentTitle = "";
+		documentTitle = 
+		navBarTab1Text = 
+		navBarTab2Text = "";
+
 
 	if (chrome.i18n) {
 		sendButtonTitle = chrome.i18n.getMessage("upload_send_button_title");
 		friendsLoaderText = chrome.i18n.getMessage("upload_friends_loader_text");
+		dialogsLoaderText = chrome.i18n.getMessage("upload_dialogs_loader_text");
 		imageLoaderText = chrome.i18n.getMessage("upload_image_loader_text");
 		documentTitle = chrome.i18n.getMessage("upload_page_title");
+		navBarTab1Text = chrome.i18n.getMessage("nav_bar_tab1_text");
+		navBarTab2Text = chrome.i18n.getMessage("nav_bar_tab2_text");
 	}
 	else {
 		sendButtonTitle = "Отправить";
 		friendsLoaderText = "Загрузка списка друзей...";
+		dialogsLoaderText = "Загрузка диалогов...";
 		imageLoaderText = "Загрузка изображения...";
 		documentTitle = "Отправка изображения с помощью сообщения ВКонтакте";
+		navBarTab1Text = "Друзья";
+		navBarTab2Text = "Диалоги";
 	}
 
+	var navBar = document.getElementById("list_navigation_tabs");
+	var tab1 = document.createElement("li");
+	var a1 = document.createElement("a");
+	a1.innerText = navBarTab1Text;
+	a1.href = "#";
+	a1.data = 0;
+	a1.onclick = selectRightTab;
+	tab1.appendChild(a1);
+	tab1.className = "active";
+
+	var tab2 = document.createElement("li");
+	var a2 = document.createElement("a");
+	a2.innerText = navBarTab2Text;
+	a2.href = "#";
+	a2.data = 1;
+	a2.onclick = selectRightTab;
+	tab2.appendChild(a2);
+
+	navBar.appendChild(tab1);
+	navBar.appendChild(tab2);
 
 	document.getElementById("send_button").innerText = sendButtonTitle;
 	document.getElementById("friends_loader_text").innerHTML = friendsLoaderText;
+	document.getElementById("dialogs_loader_text").innerHTML = friendsLoaderText;
 	document.getElementById("image_loader_text").innerHTML = imageLoaderText;
 	document.title = documentTitle;
 
@@ -452,6 +721,7 @@ document.addEventListener("DOMContentLoaded", function()
 			}
 			upload(imageUrl, imageName, params[1]);
 			beginLoadFriendList();
+			beginLoadDialogs();
 		}
 		else
 		{
@@ -466,14 +736,44 @@ document.addEventListener("DOMContentLoaded", function()
 	document.getElementById("message_text").placeholder = chrome.i18n.getMessage("upload_send_text_title");
 	document.getElementById("s_search").placeholder = chrome.i18n.getMessage("search_input_placeholder");
 	
+
+
 	window.onresize = resizeElements;
 	resizeElements();
 });
 
+
+function selectRightTab(event) {
+	var navBar = document.getElementById("list_navigation_tabs");
+
+	var activeTab = event.target.data;
+
+	removeClass(navBar.children[0], "active");
+	removeClass(navBar.children[1], "active");
+	
+	addClass(navBar.children[activeTab], "active");
+
+	var friendsPanel = document.getElementById("friends_panel");
+	var dialogsPanel = document.getElementById("dialogs_panel");
+
+	switch (activeTab) {
+		case 0:
+			friendsPanel.style.display = "";
+			dialogsPanel.style.display = "none";
+			break;
+		case 1:
+			friendsPanel.style.display = "none";
+			dialogsPanel.style.display = "";
+			break;
+	}
+
+	return false;
+}
+
 function resizeElements() {
 	var height = window.innerHeight;
-	listHeight = height - 90;
-	document.getElementById("friends_list_wrapper").style.height = listHeight + "px";
+	document.getElementById("friends_list_wrapper").style.height = height - 130 + "px";
+	document.getElementById("dialogs_list_wrapper").style.height = height - 80 + "px";
 }
 
 function onMessageTextKeyPress(e) 
