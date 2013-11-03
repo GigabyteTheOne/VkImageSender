@@ -33,7 +33,7 @@ function uploadImage()
 {
 	// checkAuth();
 
-	var loadUrl = 'upload.html#' + imageURL + '&' + vkToken;
+	var loadUrl = 'upload.html#' + imageURL + '&access_token=' + vkToken;
 // 	alert(loadUrl);
 	
 	var left = 100;

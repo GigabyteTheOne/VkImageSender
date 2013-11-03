@@ -33,10 +33,9 @@ function removeClass(ele,cls) {
 	}
 }
 
-function upload(imageUrl, fileName, accToken)
+function upload(imageUrl, fileName)
 {
 	_fileName = fileName;
-	_accToken = accToken;
 	var getPhotoHttpRequest = new XMLHttpRequest();
 	getPhotoHttpRequest.onload = onGetPhoto;
 	getPhotoHttpRequest.responseType = 'blob';
@@ -54,29 +53,35 @@ function onGetPhoto(event)
 		var fileType = event.srcElement.response.type;
 		var fileTypeArr = fileType.split('/');
 		ext = "jpg";
-		if (fileTypeArr.length > 1) 
-		{
+		if (fileTypeArr.length > 1) {
 			ext = fileTypeArr.pop();
 		}
 		_fileName += "." + ext;
 	}
 	ext = ext.toLowerCase();
 
-	if (ext !== "gif")
-	{
-		var getPhotoUploadServer = new XMLHttpRequest();
-		getPhotoUploadServer.open('GET', 'https://api.vk.com/method/photos.getMessagesUploadServer?access_token=' + _accToken);
-		getPhotoUploadServer.onload = onGetPhotoUploadServer;
-		getPhotoUploadServer.send();
+	if (ext !== "gif") {
+		beginLoadImage();
 	}
-	else
-	{
-		var getDocUploadServer = new XMLHttpRequest();
-		getDocUploadServer.open('GET', 'https://api.vk.com/method/docs.getUploadServer?access_token=' + _accToken);
-		getDocUploadServer.onload = onGetDocUploadServer;
-		getDocUploadServer.send();
+	else {
+		beginLoadDoc();
 	}
 }
+
+function beginLoadImage() {
+	var getPhotoUploadServer = new XMLHttpRequest();
+	getPhotoUploadServer.open('GET', 'https://api.vk.com/method/photos.getMessagesUploadServer?access_token=' + _accToken);
+	getPhotoUploadServer.onload = onGetPhotoUploadServer;
+	getPhotoUploadServer.send();
+}
+
+function beginLoadDoc() {
+	var getDocUploadServer = new XMLHttpRequest();
+	getDocUploadServer.open('GET', 'https://api.vk.com/method/docs.getUploadServer?access_token=' + _accToken);
+	getDocUploadServer.onload = onGetDocUploadServer;
+	getDocUploadServer.send();
+}
+
 
 function onGetDocUploadServer(event)
 {
@@ -150,8 +155,7 @@ function onPostPhoto(event)
 
 	var answer = JSON.parse(event.target.response);
 	
- 	if (answer.photo)
- 	{
+ 	if ((answer.photo) && (answer.photo !== '[]')) {
  		var savePhotoRequest = new XMLHttpRequest();
  		savePhotoRequest.open("GET", "https://api.vk.com/method/photos.saveMessagesPhoto?server=" + answer.server +
  			"&photo=" + answer.photo + 
@@ -160,9 +164,8 @@ function onPostPhoto(event)
  		savePhotoRequest.onload = onSavePhoto;
  		savePhotoRequest.send();
  	}
- 	else
- 	{
- 		alert("Photo not uploaded");
+ 	else {
+ 		thereIsAnError("Photo not uploaded", "Photo array is empty");
  	}
 }
 
@@ -633,8 +636,7 @@ function refreshButtonState()
 	
 }
 
-document.addEventListener("DOMContentLoaded", function()
-{
+document.addEventListener("DOMContentLoaded", function() {
 	var sendButton = document.getElementById("send_button");
 	sendButton.onclick = sendMessage;
 	refreshButtonState();
@@ -676,7 +678,7 @@ document.addEventListener("DOMContentLoaded", function()
 	a1.innerText = navBarTab1Text;
 	a1.href = "#";
 	a1.data = 0;
-	a1.onclick = selectRightTab;
+	a1.onclick = onSelectRightTab;
 	tab1.appendChild(a1);
 	tab1.className = "active";
 
@@ -685,11 +687,18 @@ document.addEventListener("DOMContentLoaded", function()
 	a2.innerText = navBarTab2Text;
 	a2.href = "#";
 	a2.data = 1;
-	a2.onclick = selectRightTab;
+	a2.onclick = onSelectRightTab;
 	tab2.appendChild(a2);
 
 	navBar.appendChild(tab1);
 	navBar.appendChild(tab2);
+
+	chrome.storage.local.get('activeTab', function (value) {
+		if (typeof value.activeTab !== 'undefined') {
+			setActiveTab(value.activeTab);
+		}
+	});
+
 
 	document.getElementById("send_button").innerText = sendButtonTitle;
 	document.getElementById("friends_loader_text").innerHTML = friendsLoaderText;
@@ -699,37 +708,66 @@ document.addEventListener("DOMContentLoaded", function()
 
 	document.getElementById("message_text").onkeypress = onMessageTextKeyPress;
 
-	var params = window.location.hash.substring(1).split('&');
-	if(params && params.length == 2)
-	{
-		var filename = params[0].split('/');
-		if(filename.length > 0)
-		{
-			imageUrl = params[0];
-			var imageName = filename[filename.length - 1];
-			if (imageName.indexOf('?') > -1 )
-			{
-				imageName = imageName.slice( 0, imageName.indexOf('?'));
+
+	var params = window.location.hash.substring(1).split('&access_token=');
+	if(params && params.length == 2) {
+		var imageParam = params[0];
+		_accToken = params[1];
+
+		//Check if base64 image
+		if (imageParam.indexOf('data:image') !== -1) {
+			var base64Parts = imageParam.split(',');
+			var base64Params = base64Parts[0].split(';');
+			var fileExt = base64Params[0].split('/')[1];
+
+			//Converting base64 to blob
+			var data = atob(base64Parts[1]);
+			var aBufferView = new Uint8Array(data.length);
+			for (var i = 0; i < aBufferView.length; i++) {
+				aBufferView[i] = data.charCodeAt(i);
 			}
-			if (imageName.indexOf('#') > -1 )
-			{
-				imageName = imageName.slice( 0, imageName.indexOf('#'));
-			}    
-			if (imageName.indexOf('&') > -1 )
-			{
-				imageName = imageName.slice( 0, imageName.indexOf('&'));
+			var blobData = new Blob([aBufferView.buffer]);
+
+			_photoData = blobData;
+			_fileName = "base64File." + fileExt;
+
+			if (fileExt !== "gif") {
+				beginLoadImage();
 			}
-			upload(imageUrl, imageName, params[1]);
-			beginLoadFriendList();
-			beginLoadDialogs();
+			else {
+				beginLoadDoc();
+			}
+
+			// debugger;
 		}
-		else
-		{
-			thereIsAnError('Getting image filename', 'filename.length <= 0');
+		else {
+			var filename = params[0].split('/');
+			if(filename.length > 0) {
+				imageUrl = params[0];
+				var imageName = filename[filename.length - 1];
+				if (imageName.indexOf('?') > -1 )
+				{
+					imageName = imageName.slice( 0, imageName.indexOf('?'));
+				}
+				if (imageName.indexOf('#') > -1 )
+				{
+					imageName = imageName.slice( 0, imageName.indexOf('#'));
+				}    
+				if (imageName.indexOf('&') > -1 )
+				{
+					imageName = imageName.slice( 0, imageName.indexOf('&'));
+				}
+				upload(imageUrl, imageName);
+			}
+			else {
+				thereIsAnError('Getting image filename', 'filename.length <= 0');
+			}
 		}
+
+		beginLoadFriendList();
+		beginLoadDialogs();
 	}
-	else
-	{
+	else {
 		thereIsAnError('Parsing image url', 'params || params.length != 2');
 	}
 	
@@ -743,11 +781,14 @@ document.addEventListener("DOMContentLoaded", function()
 });
 
 
-function selectRightTab(event) {
+function onSelectRightTab(event) {
+	setActiveTab(event.target.data);
+	return false;
+}
+
+
+function setActiveTab(activeTab) {
 	var navBar = document.getElementById("list_navigation_tabs");
-
-	var activeTab = event.target.data;
-
 	removeClass(navBar.children[0], "active");
 	removeClass(navBar.children[1], "active");
 	
@@ -767,8 +808,11 @@ function selectRightTab(event) {
 			break;
 	}
 
-	return false;
+	chrome.storage.local.set({
+		'activeTab': activeTab
+	});
 }
+
 
 function resizeElements() {
 	var height = window.innerHeight;
@@ -776,20 +820,20 @@ function resizeElements() {
 	document.getElementById("dialogs_list_wrapper").style.height = height - 80 + "px";
 }
 
-function onMessageTextKeyPress(e) 
-{ 
-	if (e.which === 13)
-	{
+
+
+function onMessageTextKeyPress(e) {
+	if (e.which === 13) {
 		if (e.ctrlKey)
 			sendMessage();
 		return false;
 	}
-	return true
+	return true;
 }
 
+
 function onFriendFilterChange (e) {
-	if (e.target) 
-	{
+	if (e.target) {
 		var text = e.target.value;
 		text = text.toLowerCase();
 		var fountFriends = [];
